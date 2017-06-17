@@ -1,2 +1,13 @@
 ImageTextRecognition/bin/
 ImageTextRecognition/obj/
+*.suo
+Teller/Teller.HoloLens/bin/
+Teller/Teller.HoloLens/obj/
+*.lock.json
+*.csproj.user
+Teller/TextToSpeech/obj/
+Teller/TextToSpeech/packages/
+Teller/packages/
+Teller/TextToSpeech/bin/Debug/CognitiveServicesTTS.exe.config
+Teller/TextToSpeech/bin/Debug/CognitiveServicesTTS.exe
+Teller/TextToSpeech/bin/
