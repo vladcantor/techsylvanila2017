@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ImageTextRecognition
 {
-    static class Program
+    static class ImageToText
     {
         // **********************************************
         // *** Update or verify the following values. ***
@@ -27,27 +27,11 @@ namespace ImageTextRecognition
         // a free trial subscription key, you should not need to change this region.
         const string uriBase = "https://westcentralus.api.cognitive.microsoft.com/vision/v1.0/ocr";
 
-
-        static void Main()
-        {
-            // Get the path and filename to process from the user.
-            Console.WriteLine("Optical Character Recognition:");
-            Console.Write("Enter the path to an image with text you wish to read: ");
-            //string imageFilePath = "D:\\ipacbalaj\\Downloads\\techsilvania\\COVERRR-4122.jpg";//Console.ReadLine();
-            string imageFilePath = "D:\\ipacbalaj\\Downloads\\techsilvania\\8a0dd04dd7d6e91bdfbd5f1f7aad1a40.jpg";//Console.ReadLine();
-            // Execute the REST API call.
-            MakeOCRRequest(imageFilePath);
-
-            Console.WriteLine("\nPlease wait a moment for the results to appear. Then, press Enter to exit...\n");
-            Console.ReadLine();
-        }
-
-
         /// <summary>
         /// Gets the text visible in the specified image file by using the Computer Vision REST API.
         /// </summary>
         /// <param name="imageFilePath">The image file.</param>
-        static async Task<string> MakeOCRRequest(string imageFilePath)
+        public static async Task<string> GetTextFromImage(string imageFilePath)
         {
             HttpClient client = new HttpClient();
 

@@ -36,6 +36,7 @@ using System.IO;
 using System.Media;
 using System.Threading;
 using CognitiveServicesTTS;
+using ImageTextRecognition;
 
 namespace TTSSample
 {
@@ -101,12 +102,14 @@ namespace TTSSample
             cortana.OnAudioAvailable += PlayAudio;
             cortana.OnError += ErrorHandler;
 
+            var text = ImageToText.GetTextFromImage(@"D:\image.jpg").Result;
+
             // Reuse Synthesize object to minimize latency
             cortana.Speak(CancellationToken.None, new Synthesize.InputOptions()
             {
                 RequestUri = new Uri(requestUri),
                 // Text to be spoken.
-                Text = "he United States of America, is a constitutional federal republic composed of 50 states, a federal district, five major self-governing territories, and various possessions.",
+                Text = text,
                 VoiceType = Gender.Female,
                 // Refer to the documentation for complete list of supported locales.
                 Locale = "en-US",
