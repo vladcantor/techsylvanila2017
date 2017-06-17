@@ -64,6 +64,12 @@ namespace ImageTextRecognition
                 var text = GetEntireText(objectResponse);
                 //// Display the JSON response.
 
+
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    return "I couldn't parse your image. I hope this is not a demo! Please try again";
+                }
+
                 return text;
             }
         }

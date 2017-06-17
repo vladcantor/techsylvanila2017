@@ -58,9 +58,7 @@ namespace Teller.HoloLens
             await mediaCapture.InitializeAsync();
             await mediaCapture.AddVideoEffectAsync(new MrcVideoEffectDefinition(), MediaStreamType.Photo);
             await RegisterCortanaCommands(new Dictionary<string, Action> {
-                    {"Describe", () => CaptureAndShowResult(true)},
-                    {"Enable preview", () => EnablePreview(true) },
-                    {"Disable preview", () => EnablePreview(false) },
+                    {"Print", () => CaptureAndShowResult(true)},
                     {"Help", Help }
                 });
 
@@ -69,6 +67,7 @@ namespace Teller.HoloLens
             ShowBusyIndicator(false);
 
             inited = true;
+
         }
 
         async void Help()
@@ -89,7 +88,7 @@ namespace Teller.HoloLens
             CaptureAndShowResult(false);
         }
 
-        async void CaptureAndShowResult(bool readText)
+        async Task CaptureAndShowResult(bool readText)
         {
             if (!inited || busy)
                 return;
@@ -97,7 +96,7 @@ namespace Teller.HoloLens
             ShowBusyIndicator(true);
             var desc = await CaptureAndAnalyze(readText);
             InvokeOnMain(() => ShowBusyIndicator(false));
-        
+
             await TextToSpeech(desc);
         }
 
@@ -110,12 +109,34 @@ namespace Teller.HoloLens
 
         async Task<string> CaptureAndAnalyze(bool readText = false)
         {
-            var imgFormat = ImageEncodingProperties.CreateJpeg();
-
-            //NOTE: this is how you can save a frame to the CameraRoll folder:
-            var file = await KnownFolders.CameraRoll.CreateFileAsync($"MCS_Photo{DateTime.Now:HH-mm-ss}.jpg", CreationCollisionOption.GenerateUniqueName);
-            await mediaCapture.CapturePhotoToStorageFileAsync(imgFormat, file);
+            StorageFile file = await GetCurrentCapture();
             var stream = await file.OpenStreamForReadAsync();
+            stream.Seek(0, SeekOrigin.Begin);
+            InvokeOnMain(async () =>
+            {
+                var image = new Image();
+                var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                memoryStream.Position = 0;
+                image.Load(new Urho.MemoryBuffer(memoryStream.ToArray()));
+
+                Node child = Scene.CreateChild();
+                child.Position = LeftCamera.Node.WorldPosition + LeftCamera.Node.WorldDirection * 2f;
+                child.LookAt(LeftCamera.Node.WorldPosition, Vector3.Up, TransformSpace.World);
+
+                child.Scale = new Vector3(1f, image.Height / (float)image.Width, 0.1f) / 10;
+                var texture = new Texture2D();
+                texture.SetData(image, true);
+
+                var material = new Material();
+                material.SetTechnique(0, CoreAssets.Techniques.Diff, 0, 0);
+                material.SetTexture(TextureUnit.Diffuse, texture);
+
+                var box = child.CreateComponent<Box>();
+                box.SetMaterial(material);
+
+                child.RunActions(new EaseBounceOut(new ScaleBy(1f, 5)));
+            });
 
             try
             {
@@ -130,6 +151,16 @@ namespace Teller.HoloLens
             {
                 return "Failed";
             }
+        }
+
+        private async Task<StorageFile> GetCurrentCapture()
+        {
+            var imgFormat = ImageEncodingProperties.CreateJpeg();
+
+            //NOTE: this is how you can save a frame to the CameraRoll folder:
+            var file = await KnownFolders.CameraRoll.CreateFileAsync($"MCS_Photo{DateTime.Now:HH-mm-ss}.jpg", CreationCollisionOption.GenerateUniqueName);
+            await mediaCapture.CapturePhotoToStorageFileAsync(imgFormat, file);
+            return file;
         }
     }
 
