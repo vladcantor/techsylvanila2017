@@ -18,6 +18,7 @@ using Urho.Shapes;
 using Urho.Urho2D;
 using ImageTextRecognition;
 using TTSSample;
+using Windows.Storage;
 
 namespace Teller.HoloLens
 {
@@ -96,6 +97,7 @@ namespace Teller.HoloLens
             ShowBusyIndicator(true);
             var desc = await CaptureAndAnalyze(readText);
             InvokeOnMain(() => ShowBusyIndicator(false));
+        
             await TextToSpeech(desc);
         }
 
@@ -111,53 +113,13 @@ namespace Teller.HoloLens
             var imgFormat = ImageEncodingProperties.CreateJpeg();
 
             //NOTE: this is how you can save a frame to the CameraRoll folder:
-            //var file = await KnownFolders.CameraRoll.CreateFileAsync($"MCS_Photo{DateTime.Now:HH-mm-ss}.jpg", CreationCollisionOption.GenerateUniqueName);
-            //await mediaCapture.CapturePhotoToStorageFileAsync(imgFormat, file);
-            //var stream = await file.OpenStreamForReadAsync();
-
-            // Capture a frame and put it to MemoryStream
-            var memoryStream = new MemoryStream();
-            using (var ras = new InMemoryRandomAccessStream())
-            {
-                await mediaCapture.CapturePhotoToStreamAsync(imgFormat, ras);
-                ras.Seek(0);
-                using (var stream = ras.AsStreamForRead())
-                    stream.CopyTo(memoryStream);
-            }
-
-            memoryStream.Position = 0;
-            var imageBytes = memoryStream.ToArray();
-
-
-            if (withPreview)
-            {
-                InvokeOnMain(() =>
-                    {
-                        var image = new Image();
-                        image.Load(new Urho.MemoryBuffer(imageBytes));
-
-                        Node child = Scene.CreateChild();
-                        child.Position = LeftCamera.Node.WorldPosition + LeftCamera.Node.WorldDirection * 2f;
-                        child.LookAt(LeftCamera.Node.WorldPosition, Vector3.Up, TransformSpace.World);
-
-                        child.Scale = new Vector3(1f, image.Height / (float)image.Width, 0.1f) / 10;
-                        var texture = new Texture2D();
-                        texture.SetData(image, true);
-
-                        var material = new Material();
-                        material.SetTechnique(0, CoreAssets.Techniques.Diff, 0, 0);
-                        material.SetTexture(TextureUnit.Diffuse, texture);
-
-                        var box = child.CreateComponent<Box>();
-                        box.SetMaterial(material);
-
-                        child.RunActions(new EaseBounceOut(new ScaleBy(1f, 5)));
-                    });
-            }
+            var file = await KnownFolders.CameraRoll.CreateFileAsync($"MCS_Photo{DateTime.Now:HH-mm-ss}.jpg", CreationCollisionOption.GenerateUniqueName);
+            await mediaCapture.CapturePhotoToStorageFileAsync(imgFormat, file);
+            var stream = await file.OpenStreamForReadAsync();
 
             try
             {
-                return ImageToText.GetTextFromImage(imageBytes).Result;
+                return await ImageToText.GetTextFromImage(await ImageToText.GetImageAsByteArray(file.Path));
 
             }
             catch (ClientException exc)

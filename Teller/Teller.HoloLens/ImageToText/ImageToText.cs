@@ -43,6 +43,7 @@ namespace ImageTextRecognition
 
             // Assemble the URI for the REST API Call.
             string uri = uriBase + "?" + requestParameters;
+            client.Timeout = TimeSpan.FromSeconds(10);
 
             HttpResponseMessage response;
 
@@ -90,11 +91,16 @@ namespace ImageTextRecognition
         /// </summary>
         /// <param name="imageFilePath">The image file to read.</param>
         /// <returns>The byte array of the image data.</returns>
-        static byte[] GetImageAsByteArray(string imageFilePath)
+        public async static Task<byte[]> GetImageAsByteArray(string imageFilePath)
         {
-            FileStream fileStream = new FileStream(imageFilePath, FileMode.Open, FileAccess.Read);
-            BinaryReader binaryReader = new BinaryReader(fileStream);
-            return binaryReader.ReadBytes((int)fileStream.Length);
+            return await Task.Factory.StartNew(() =>
+            {
+
+                FileStream fileStream = new FileStream(imageFilePath, FileMode.Open, FileAccess.Read);
+                BinaryReader binaryReader = new BinaryReader(fileStream);
+                return binaryReader.ReadBytes((int)fileStream.Length);
+
+            });
         }
 
         /// <summary>
