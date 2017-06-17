@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ImageTextRecognition
 {
@@ -31,8 +33,8 @@ namespace ImageTextRecognition
             // Get the path and filename to process from the user.
             Console.WriteLine("Optical Character Recognition:");
             Console.Write("Enter the path to an image with text you wish to read: ");
-            string imageFilePath = "D:\\ipacbalaj\\Downloads\\techsilvania\\COVERRR-4122.jpg";//Console.ReadLine();
-
+            //string imageFilePath = "D:\\ipacbalaj\\Downloads\\techsilvania\\COVERRR-4122.jpg";//Console.ReadLine();
+            string imageFilePath = "D:\\ipacbalaj\\Downloads\\techsilvania\\8a0dd04dd7d6e91bdfbd5f1f7aad1a40.jpg";//Console.ReadLine();
             // Execute the REST API call.
             MakeOCRRequest(imageFilePath);
 
@@ -45,7 +47,7 @@ namespace ImageTextRecognition
         /// Gets the text visible in the specified image file by using the Computer Vision REST API.
         /// </summary>
         /// <param name="imageFilePath">The image file.</param>
-        static async void MakeOCRRequest(string imageFilePath)
+        static async Task<string> MakeOCRRequest(string imageFilePath)
         {
             HttpClient client = new HttpClient();
 
@@ -75,12 +77,34 @@ namespace ImageTextRecognition
                 // Get the JSON response.
                 string contentString = await response.Content.ReadAsStringAsync();
 
-                // Display the JSON response.
+                var objectResponse = JsonConvert.DeserializeObject<ImageToTextResponseModel>(contentString);
+
+                var text = GetEntireText(objectResponse);
+                //// Display the JSON response.
                 Console.WriteLine("\nResponse:\n");
-                Console.WriteLine(JsonPrettyPrint(contentString));
+                Console.WriteLine(text);
+
+                return text;
             }
         }
 
+        static string GetEntireText(ImageToTextResponseModel imageToTextModel)
+        {
+            var text = "";
+
+            foreach (var region in imageToTextModel.regions)
+            {
+                foreach (var line in region.lines)
+                {
+                    foreach (var word in line.words)
+                    {
+                        text += word.text + " ";
+                    }
+                }
+            }
+
+            return text;
+        }
 
         /// <summary>
         /// Returns the contents of the specified file as a byte array.
