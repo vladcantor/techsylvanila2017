@@ -54,17 +54,17 @@ namespace Teller.HoloLens
             busyIndicatorNode.CreateComponent<BusyIndicator>();
 
             mediaCapture = new MediaCapture();
-            //await mediaCapture.InitializeAsync();
-            //await mediaCapture.AddVideoEffectAsync(new MrcVideoEffectDefinition(), MediaStreamType.Photo);
-            //await RegisterCortanaCommands(new Dictionary<string, Action> {
-            //        {"Describe", () => CaptureAndShowResult(true)},
-            //        {"Enable preview", () => EnablePreview(true) },
-            //        {"Disable preview", () => EnablePreview(false) },
-            //        {"Help", Help }
-            //    });
+            await mediaCapture.InitializeAsync();
+            await mediaCapture.AddVideoEffectAsync(new MrcVideoEffectDefinition(), MediaStreamType.Photo);
+            await RegisterCortanaCommands(new Dictionary<string, Action> {
+                    {"Describe", () => CaptureAndShowResult(true)},
+                    {"Enable preview", () => EnablePreview(true) },
+                    {"Disable preview", () => EnablePreview(false) },
+                    {"Help", Help }
+                });
 
             ShowBusyIndicator(true);
-            await CustomSoundPlayer.PlaySound("Welcome to the Microsoft Cognitive Services sample for HoloLens and UrhoSharp.");
+            await TextToSpeech("Welcome to the Microsoft Cognitive Services sample for HoloLens and UrhoSharp.");
             ShowBusyIndicator(false);
 
             inited = true;
@@ -96,7 +96,7 @@ namespace Teller.HoloLens
             ShowBusyIndicator(true);
             var desc = await CaptureAndAnalyze(readText);
             InvokeOnMain(() => ShowBusyIndicator(false));
-            await CustomSoundPlayer.PlaySound(desc);
+            await TextToSpeech(desc);
         }
 
         void ShowBusyIndicator(bool show)
