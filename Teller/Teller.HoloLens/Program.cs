@@ -40,6 +40,7 @@ namespace Teller.HoloLens
         bool inited;
         bool busy;
         bool withPreview;
+        Node preview;
 
         public CognitiveServicesApp(ApplicationOptions opts) : base(opts) { }
 
@@ -59,6 +60,7 @@ namespace Teller.HoloLens
             await mediaCapture.AddVideoEffectAsync(new MrcVideoEffectDefinition(), MediaStreamType.Photo);
             await RegisterCortanaCommands(new Dictionary<string, Action> {
                     {"Print", () => CaptureAndShowResult(true)},
+                    {"New", RemovePreview},
                     {"Help", Help }
                 });
 
@@ -86,6 +88,15 @@ namespace Teller.HoloLens
         public override void OnGestureDoubleTapped()
         {
             CaptureAndShowResult(false);
+        }
+
+        async void RemovePreview()
+        {
+
+            if(preview  != null)
+            {
+                preview.RemoveAllChildren();
+            }
         }
 
         async Task CaptureAndShowResult(bool readText)
@@ -120,11 +131,18 @@ namespace Teller.HoloLens
                 memoryStream.Position = 0;
                 image.Load(new Urho.MemoryBuffer(memoryStream.ToArray()));
 
-                Node child = Scene.CreateChild();
-                child.Position = LeftCamera.Node.WorldPosition + LeftCamera.Node.WorldDirection * 2f;
-                child.LookAt(LeftCamera.Node.WorldPosition, Vector3.Up, TransformSpace.World);
+                if(preview == null)
+                {
+                    preview = Scene.CreateChild();
+                }
+                else
+                {
+                    RemovePreview();
+                }
+                preview.Position = LeftCamera.Node.WorldPosition + LeftCamera.Node.WorldDirection * 2f;
+                preview.LookAt(LeftCamera.Node.WorldPosition, Vector3.Up, TransformSpace.World);
 
-                child.Scale = new Vector3(1f, image.Height / (float)image.Width, 0.1f) / 10;
+                preview.Scale = new Vector3(1f, image.Height / (float)image.Width, 0.1f) / 10;
                 var texture = new Texture2D();
                 texture.SetData(image, true);
 
@@ -132,10 +150,11 @@ namespace Teller.HoloLens
                 material.SetTechnique(0, CoreAssets.Techniques.Diff, 0, 0);
                 material.SetTexture(TextureUnit.Diffuse, texture);
 
-                var box = child.CreateComponent<Box>();
+                var box = preview.CreateComponent<Box>();
                 box.SetMaterial(material);
+                preview.RemoveAllChildren();
 
-                child.RunActions(new EaseBounceOut(new ScaleBy(1f, 5)));
+                preview.RunActions(new EaseBounceOut(new ScaleBy(1f, 5)));
             });
 
             try

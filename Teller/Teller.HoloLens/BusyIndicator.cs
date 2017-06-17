@@ -31,8 +31,8 @@ namespace Teller.HoloLens
 
 			node = Node.CreateChild("BusyIndicatorParts");
 
-			var torus = node.CreateComponent<Torus>();
-			torus.Color = Color.Cyan;
+			var pyramid = node.CreateComponent<Pyramid>();
+			pyramid.Color = Color.Magenta;
 			node.Rotation = new Quaternion(90, 0, 0);
 			node.RunActions(new RepeatForever(
 				new EaseBounceOut(new RotateBy(0.9f, 180, 0, 0)),
