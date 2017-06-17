@@ -45,6 +45,7 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ImageToText\entities\HandwrittenText.cs" />
     <Compile Include="ImageToText\entities\ImageToTextResponseModel.cs" />
     <Compile Include="ImageToText\entities\Line.cs" />
     <Compile Include="ImageToText\entities\Region.cs" />

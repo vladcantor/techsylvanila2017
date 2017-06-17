@@ -159,7 +159,7 @@ namespace Teller.HoloLens
 
             try
             {
-                return await ImageToText.GetTextFromImage(await ImageToText.GetImageAsByteArray(file.Path));
+                return await ImageToText.ReadHandwrittenText(await ImageToText.GetImageAsByteArray(file.Path));
 
             }
             catch (ClientException exc)
