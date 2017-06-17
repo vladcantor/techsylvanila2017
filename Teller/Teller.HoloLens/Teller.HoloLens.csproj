@@ -45,9 +45,16 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ImageToText\entities\ImageToTextResponseModel.cs" />
+    <Compile Include="ImageToText\entities\Line.cs" />
+    <Compile Include="ImageToText\entities\Region.cs" />
+    <Compile Include="ImageToText\entities\Word.cs" />
+    <Compile Include="ImageToText\ImageToText.cs" />
     <Compile Include="BusyIndicator.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TTSClient.cs" />
+    <Compile Include="CustomSoundPlayer.cs" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">

@@ -62,8 +62,6 @@ namespace ImageTextRecognition
 
                 var text = GetEntireText(objectResponse);
                 //// Display the JSON response.
-                Console.WriteLine("\nResponse:\n");
-                Console.WriteLine(text);
 
                 return text;
             }
