@@ -148,7 +148,13 @@ namespace ImageTextRecognition
             }
 
             // Display the JSON response.
-            return GetTextFromLines(JsonConvert.DeserializeObject<LinesWithText>(contentString));
+            var text = GetTextFromLines(JsonConvert.DeserializeObject<LinesWithText>(contentString));
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return "I couldn't parse your image. I hope this is not a demo! Please try again";
+            }
+
+            return text;
         }
 
         static string GetTextFromLines(LinesWithText linesWithText)

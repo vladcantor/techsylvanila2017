@@ -1,23 +1,20 @@
-﻿using System;
+﻿using ImageTextRecognition;
+using Microsoft.ProjectOxford.Vision;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
+using Urho;
+using Urho.Actions;
+using Urho.Resources;
+using Urho.Shapes;
+using Urho.SharpReality;
+using Urho.Urho2D;
 using Windows.ApplicationModel.Core;
 using Windows.Foundation.Collections;
 using Windows.Media.Capture;
 using Windows.Media.Effects;
 using Windows.Media.MediaProperties;
-using Windows.Storage.Streams;
-using Microsoft.ProjectOxford.Vision;
-using Urho;
-using Urho.Actions;
-using Urho.SharpReality;
-using Urho.Resources;
-using Urho.Shapes;
-using Urho.Urho2D;
-using ImageTextRecognition;
-using TTSSample;
 using Windows.Storage;
 
 namespace Teller.HoloLens
@@ -25,11 +22,11 @@ namespace Teller.HoloLens
     internal class Program
     {
         [MTAThread]
-        static void Main() => CoreApplication.Run(new UrhoAppViewSource<CognitiveServicesApp>());
+        static void Main() => CoreApplication.Run(new UrhoAppViewSource<TellerHololensApp>());
     }
 
 
-    public class CognitiveServicesApp : StereoApplication
+    public class TellerHololensApp : StereoApplication
     {
         //the key can be obtained for free here: https://www.microsoft.com/cognitive-services/en-us/computer-vision-api
         //click on "Get started for free"
@@ -41,8 +38,9 @@ namespace Teller.HoloLens
         bool busy;
         bool withPreview;
         Node preview;
+        string _lastText = String.Empty;
 
-        public CognitiveServicesApp(ApplicationOptions opts) : base(opts) { }
+        public TellerHololensApp(ApplicationOptions opts) : base(opts) { }
 
         protected override async void Start()
         {
@@ -50,22 +48,27 @@ namespace Teller.HoloLens
             base.Start();
 
             EnableGestureTapped = true;
-
             busyIndicatorNode = Scene.CreateChild();
             busyIndicatorNode.SetScale(0.06f);
             busyIndicatorNode.CreateComponent<BusyIndicator>();
 
             mediaCapture = new MediaCapture();
-            await mediaCapture.InitializeAsync();
-            await mediaCapture.AddVideoEffectAsync(new MrcVideoEffectDefinition(), MediaStreamType.Photo);
+
+            if (!Emulator)
+            {
+                await mediaCapture.InitializeAsync();
+                await mediaCapture.AddVideoEffectAsync(new MrcVideoEffectDefinition(), MediaStreamType.Photo);
+            }
+
             await RegisterCortanaCommands(new Dictionary<string, Action> {
-                    {"Print", () => CaptureAndShowResult(true)},
+                    {"Read", () => CaptureAndShowResult(true)},
+                    {"Repeat", () => RepeatText() },
                     {"New", RemovePreview},
                     {"Help", Help }
                 });
 
             ShowBusyIndicator(true);
-            await TextToSpeech("Welcome to the Microsoft Cognitive Services sample for HoloLens and UrhoSharp.");
+            await TextToSpeech("Welcome to the Teller application for HoloLens.");
             ShowBusyIndicator(false);
 
             inited = true;
@@ -93,10 +96,20 @@ namespace Teller.HoloLens
         async void RemovePreview()
         {
 
-            if(preview  != null)
+            if (preview != null)
             {
                 preview.RemoveAllChildren();
             }
+        }
+
+        async Task RepeatText()
+        {
+            if (String.IsNullOrWhiteSpace(_lastText))
+            {
+                await TextToSpeech("There is no text to repeat");
+            }
+
+            await TextToSpeech(_lastText);
         }
 
         async Task CaptureAndShowResult(bool readText)
@@ -107,7 +120,7 @@ namespace Teller.HoloLens
             ShowBusyIndicator(true);
             var desc = await CaptureAndAnalyze(readText);
             InvokeOnMain(() => ShowBusyIndicator(false));
-
+            _lastText = desc;
             await TextToSpeech(desc);
         }
 
@@ -120,45 +133,46 @@ namespace Teller.HoloLens
 
         async Task<string> CaptureAndAnalyze(bool readText = false)
         {
-            StorageFile file = await GetCurrentCapture();
-            var stream = await file.OpenStreamForReadAsync();
-            stream.Seek(0, SeekOrigin.Begin);
-            InvokeOnMain(async () =>
-            {
-                var image = new Image();
-                var memoryStream = new MemoryStream();
-                await stream.CopyToAsync(memoryStream);
-                memoryStream.Position = 0;
-                image.Load(new Urho.MemoryBuffer(memoryStream.ToArray()));
-
-                if(preview == null)
-                {
-                    preview = Scene.CreateChild();
-                }
-                else
-                {
-                    RemovePreview();
-                }
-                preview.Position = LeftCamera.Node.WorldPosition + LeftCamera.Node.WorldDirection * 2f;
-                preview.LookAt(LeftCamera.Node.WorldPosition, Vector3.Up, TransformSpace.World);
-
-                preview.Scale = new Vector3(1f, image.Height / (float)image.Width, 0.1f) / 10;
-                var texture = new Texture2D();
-                texture.SetData(image, true);
-
-                var material = new Material();
-                material.SetTechnique(0, CoreAssets.Techniques.Diff, 0, 0);
-                material.SetTexture(TextureUnit.Diffuse, texture);
-
-                var box = preview.CreateComponent<Box>();
-                box.SetMaterial(material);
-                preview.RemoveAllChildren();
-
-                preview.RunActions(new EaseBounceOut(new ScaleBy(1f, 5)));
-            });
-
             try
             {
+                StorageFile file = await GetCurrentCapture();
+                var stream = await file.OpenStreamForReadAsync();
+                stream.Seek(0, SeekOrigin.Begin);
+                InvokeOnMain(async () =>
+                {
+                    var image = new Image();
+                    var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    memoryStream.Position = 0;
+                    image.Load(new Urho.MemoryBuffer(memoryStream.ToArray()));
+
+                    if (preview == null)
+                    {
+                        preview = Scene.CreateChild();
+                    }
+                    else
+                    {
+                        RemovePreview();
+                    }
+                    preview.Position = LeftCamera.Node.WorldPosition + LeftCamera.Node.WorldDirection * 2f;
+                    preview.LookAt(LeftCamera.Node.WorldPosition, Vector3.Up, TransformSpace.World);
+
+                    preview.Scale = new Vector3(1f, image.Height / (float)image.Width, 0.1f) / 10;
+                    var texture = new Texture2D();
+                    texture.SetData(image, true);
+
+                    var material = new Material();
+                    material.SetTechnique(0, CoreAssets.Techniques.Diff, 0, 0);
+                    material.SetTexture(TextureUnit.Diffuse, texture);
+
+                    var box = preview.CreateComponent<Box>();
+                    box.SetMaterial(material);
+                    preview.RemoveAllChildren();
+
+                    preview.RunActions(new EaseBounceOut(new ScaleBy(1f, 5)));
+                });
+
+
                 return await ImageToText.ReadHandwrittenText(await ImageToText.GetImageAsByteArray(file.Path));
 
             }
